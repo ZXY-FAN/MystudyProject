@@ -3,11 +3,13 @@
 处理原始数据并准备训练数据
 """
 
+
 import pandas as pd
 import numpy as np
+
 from sklearn.model_selection import train_test_split
 import yaml
-import os
+
 
 
 class DataPipeline:
@@ -20,6 +22,7 @@ class DataPipeline:
         with open(config_path, "r") as file:
             return yaml.safe_load(file)
 
+
     def load_data(self, data_path):
         """
         加载数据
@@ -27,11 +30,15 @@ class DataPipeline:
         Args:
             data_path: 数据文件路径
 
-        Returns:
-            加载的数据
+    def load_data(self):
         """
-        # 这里使用示例数据，实际项目中从文件加载
-        # 创建一个简单的分类数据集
+        加载数据 - 直接生成合成数据，不依赖外部文件
+
+
+        Returns:
+            生成的合成数据
+        """
+        # 使用合成数据，不依赖 data.dvc 或外部文件
         from sklearn.datasets import make_classification
 
         X, y = make_classification(
@@ -42,6 +49,9 @@ class DataPipeline:
             n_clusters_per_class=1,
             random_state=42,
         )
+
+
+        print(f"Generated synthetic data: {X.shape[0]} samples, {X.shape[1]} features")
 
         return X, y
 
@@ -66,6 +76,7 @@ class DataPipeline:
 
         return X_train, X_test, y_train, y_test
 
+
     def run_pipeline(self, data_path):
         """
         运行完整的数据管道
@@ -78,6 +89,17 @@ class DataPipeline:
         """
         print("Loading data...")
         X, y = self.load_data(data_path)
+
+    def run_pipeline(self):
+        """
+        运行完整的数据管道
+
+        Returns:
+            处理后的数据
+        """
+        print("Generating synthetic data...")
+        X, y = self.load_data()
+
 
         print("Preprocessing data...")
         X_train, X_test, y_train, y_test = self.preprocess_data(X, y)

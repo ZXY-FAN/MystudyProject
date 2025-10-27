@@ -10,9 +10,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from flask import Flask, request, jsonify
-import numpy as np
-import joblib
-import os
 from app.models.model_handler import ModelHandler
 
 # 初始化Flask应用
@@ -51,7 +48,6 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/model_info", methods=["GET"])
 def model_info():

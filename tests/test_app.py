@@ -3,15 +3,24 @@
 包含多个有意义的测试用例
 """
 
+
 import pytest
 import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+import sys
+import os
+
+
+# 添加项目根目录到 Python 路径
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+import pytest
 from app.main import app
 from app.models.model_handler import ModelHandler
-import numpy as np
+
 
 
 @pytest.fixture

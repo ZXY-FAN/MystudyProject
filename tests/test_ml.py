@@ -2,14 +2,23 @@
 机器学习管道测试
 """
 
+
 import pytest
 import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from ml.data_pipeline import DataPipeline
+import sys
+import os
+
+
+# 添加项目根目录到 Python 路径
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import numpy as np
+from ml.data_pipeline import DataPipeline
+
 
 
 def test_data_pipeline_initialization():
@@ -33,7 +42,11 @@ def test_data_pipeline_config_loading():
 def test_data_loading():
     """测试数据加载"""
     pipeline = DataPipeline()
+
     X, y = pipeline.load_data("dummy_path")
+
+    X, y = pipeline.load_data()
+
 
     assert X is not None
     assert y is not None
@@ -60,7 +73,11 @@ def test_data_preprocessing():
 def test_pipeline_integration():
     """测试完整管道集成"""
     pipeline = DataPipeline()
+
     X_train, X_test, y_train, y_test = pipeline.run_pipeline("dummy_path")
+
+    X_train, X_test, y_train, y_test = pipeline.run_pipeline()
+
 
     # 检查返回的数据形状
     assert X_train.shape[1] == X_test.shape[1]  # 特征数量相同
