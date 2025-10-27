@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: mlflow
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MLflow 服务器
+  mlflow:
+    image: python:3.9-slim
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5001:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=postgresql://mlflow:mlflow@postgres:5432/mlflow
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=file:///app/mlruns
+    working_dir: /app
+    command: >
+      sh -c "pip install mlflow psycopg2-binary &&
+             mlflow server --host 0.0.0.0 --port 5000 
+                 --backend-store-uri $${MLFLOW_BACKEND_STORE_URI}
+                 --default-artifact-root $${MLFLOW_DEFAULT_ARTIFACT_ROOT}"
+    volumes:
+      - ./mlruns:/app/mlruns
+
+  # 您的 ML 应用
+  ml-app:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      - mlflow
+    volumes:
+      - ./ml/registry:/app/ml/registry
+      - ./logs:/app/logs
+      - ./mlruns:/app/mlruns
+
+  # 训练服务
+  ml-trainer:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      - mlflow
+    volumes:
+      - ./ml:/app/ml
+      - ./logs:/app/logs
+      - ./mlruns:/app/mlruns
+    working_dir: /app
+    command: ["python", "ml/train.py"]
+
+volumes:
+  postgres_data:
