@@ -2,10 +2,15 @@
 训练脚本
 使用MLflow跟踪实验
 """
+import sys
+import os
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import mlflow
 import mlflow.sklearn
 import joblib
-import os
 import yaml
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score
@@ -24,9 +29,33 @@ def get_git_info():
 def train_model():
     """训练模型并记录实验"""
     
-    # 加载配置
-    with open('ml/configs/training_config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
+    # 加载配置 - 使用安全的文件读取方式
+    config_path = 'ml/configs/training_config.yaml'
+    config = {
+        'data': {'test_size': 0.2, 'random_state': 42},
+        'model': {'random_forest': {'n_estimators': 100, 'max_depth': 10}},
+        'training': {'random_state': 42}
+    }
+    
+    if os.path.exists(config_path):
+        try:
+            # 尝试多种编码方式
+            encodings = ['utf-8', 'gbk', 'latin-1']
+            for encoding in encodings:
+                try:
+                    with open(config_path, 'r', encoding=encoding) as file:
+                        loaded_config = yaml.safe_load(file)
+                        if loaded_config:
+                            config = loaded_config
+                            print(f"Successfully loaded config with {encoding} encoding")
+                            break
+                except UnicodeDecodeError:
+                    continue
+        except Exception as e:
+            print(f"Warning: Could not load config file: {e}")
+            print("Using default configuration")
+    else:
+        print("Config file not found, using default configuration")
     
     # 设置MLflow实验
     mlflow.set_experiment("classification_experiment")
@@ -39,14 +68,15 @@ def train_model():
         git_sha = get_git_info()
         mlflow.set_tag("git_commit", git_sha)
         
-        # 运行数据管道
+        # 运行数据管道（不再依赖外部数据文件）
         pipeline = DataPipeline()
-        X_train, X_test, y_train, y_test = pipeline.run_pipeline('data/raw_data.csv')
+        X_train, X_test, y_train, y_test = pipeline.run_pipeline()
         
         # 记录数据集信息
         mlflow.log_param("dataset_size", len(X_train))
         mlflow.log_param("n_features", X_train.shape[1])
         mlflow.log_param("git_commit", git_sha)
+        mlflow.log_param("data_source", "synthetic_generated")
         
         # 记录超参数
         params = config['model']['random_forest']
@@ -83,24 +113,6 @@ def train_model():
         
         # 记录模型
         mlflow.sklearn.log_model(model, "model")
-        
-        # 记录混淆矩阵（示例）
-        from sklearn.metrics import confusion_matrix
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        
-        cm = confusion_matrix(y_test, y_pred)
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d')
-        plt.title('Confusion Matrix')
-        plt.ylabel('True Label')
-        plt.xlabel('Predicted Label')
-        
-        # 保存并记录图表
-        cm_path = "confusion_matrix.png"
-        plt.savefig(cm_path)
-        mlflow.log_artifact(cm_path)
-        os.remove(cm_path)
         
         print("Training completed and logged to MLflow")
 

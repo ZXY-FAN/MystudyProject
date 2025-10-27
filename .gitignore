@@ -21,7 +21,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# DVC
+# DVC - 只忽略缓存和临时文件，不忽略 .dvc 文件
 .dvc/tmp
 .dvc/cache
 
@@ -36,8 +36,9 @@ mlruns/
 .DS_Store
 Thumbs.db
 
-# Data files
-data/
+# Data files - 忽略原始数据文件，但不忽略 .dvc 指针文件
+data/*
+!*.dvc
 *.csv
 *.pkl
 *.joblib

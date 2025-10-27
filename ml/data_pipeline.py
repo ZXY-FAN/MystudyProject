@@ -18,18 +18,14 @@ class DataPipeline:
         with open(config_path, 'r') as file:
             return yaml.safe_load(file)
     
-    def load_data(self, data_path):
+    def load_data(self):
         """
-        加载数据
+        加载数据 - 直接生成合成数据，不依赖外部文件
         
-        Args:
-            data_path: 数据文件路径
-            
         Returns:
-            加载的数据
+            生成的合成数据
         """
-        # 这里使用示例数据，实际项目中从文件加载
-        # 创建一个简单的分类数据集
+        # 使用合成数据，不依赖 data.dvc 或外部文件
         from sklearn.datasets import make_classification
         X, y = make_classification(
             n_samples=1000,
@@ -40,6 +36,7 @@ class DataPipeline:
             random_state=42
         )
         
+        print(f"Generated synthetic data: {X.shape[0]} samples, {X.shape[1]} features")
         return X, y
     
     def preprocess_data(self, X, y):
@@ -62,18 +59,15 @@ class DataPipeline:
         
         return X_train, X_test, y_train, y_test
     
-    def run_pipeline(self, data_path):
+    def run_pipeline(self):
         """
         运行完整的数据管道
         
-        Args:
-            data_path: 数据文件路径
-            
         Returns:
             处理后的数据
         """
-        print("Loading data...")
-        X, y = self.load_data(data_path)
+        print("Generating synthetic data...")
+        X, y = self.load_data()
         
         print("Preprocessing data...")
         X_train, X_test, y_train, y_test = self.preprocess_data(X, y)
