@@ -4,6 +4,10 @@
 """
 import sys
 import os
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import mlflow
 import mlflow.sklearn
 import joblib
@@ -11,11 +15,8 @@ import yaml
 import git
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score
-
-# 添加项目根目录到 Python 路径（在所有导入之后）
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from ml.data_pipeline import DataPipeline
+
 
 def get_git_info():
     """获取Git提交信息"""
@@ -23,8 +24,9 @@ def get_git_info():
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
         return sha
-    except Exception:  # 修复：使用具体的异常类型而不是裸 except
+    except Exception:
         return "unknown"
+
 
 def train_model():
     """训练模型并记录实验"""
@@ -47,7 +49,8 @@ def train_model():
                         loaded_config = yaml.safe_load(file)
                         if loaded_config:
                             config = loaded_config
-                            print(f"Successfully loaded config with {encoding} encoding")
+                            msg = f"Successfully loaded config with {encoding} encoding"
+                            print(msg)
                             break
                 except UnicodeDecodeError:
                     continue
@@ -115,6 +118,7 @@ def train_model():
         mlflow.sklearn.log_model(model, "model")
         
         print("Training completed and logged to MLflow")
+
 
 if __name__ == '__main__':
     train_model()
