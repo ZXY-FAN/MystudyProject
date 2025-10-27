@@ -25,33 +25,35 @@ def setup_mlflow_remote():
     # 从环境变量获取 MLflow 配置
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "classification_experiment")
-    
+
     print(f"Setting up MLflow with tracking URI: {tracking_uri}")
     print(f"Experiment name: {experiment_name}")
-    
+
     # 设置 MLflow 跟踪 URI
     mlflow.set_tracking_uri(tracking_uri)
-    
+
     # 设置认证信息（如果提供）
     username = os.getenv("MLFLOW_TRACKING_USERNAME")
     password = os.getenv("MLFLOW_TRACKING_PASSWORD")
-    
+
     if username and password:
         os.environ["MLFLOW_TRACKING_USERNAME"] = username
         os.environ["MLFLOW_TRACKING_PASSWORD"] = password
         print("MLflow authentication configured")
-    
+
     # 检查 MLflow 服务器连接
     try:
-        response = requests.get(f"{tracking_uri}/api/2.0/mlflow/experiments/list", timeout=10)
+        response = requests.get(
+            f"{tracking_uri}/api/2.0/mlflow/experiments/list", timeout=10
+        )
         if response.status_code == 200:
             print("✅ MLflow server connection successful")
         else:
-            print(f"⚠️ MLflow server returned status code: {response.status_code}")
+            print(f"⚠️ MLflow server returned status: {response.status_code}")
     except Exception as e:
         print(f"❌ Failed to connect to MLflow server: {e}")
         print("Continuing with training anyway...")
-    
+
     return experiment_name
 
 
@@ -86,7 +88,10 @@ def load_config():
                         loaded_config = yaml.safe_load(file)
                         if loaded_config:
                             config = loaded_config
-                            msg = f"Successfully loaded config with {encoding} encoding"
+                            msg = (
+                                f"Successfully loaded config with {encoding} "
+                                "encoding"
+                            )
                             print(msg)
                             break
                 except UnicodeDecodeError:
@@ -96,16 +101,16 @@ def load_config():
             print("Using default configuration")
     else:
         print("Config file not found, using default configuration")
-    
+
     return config
 
 
 def train_model():
     """训练模型并记录实验到远程 MLflow 服务器"""
-    
+
     # 设置远程 MLflow
     experiment_name = setup_mlflow_remote()
-    
+
     # 加载配置
     config = load_config()
 
@@ -121,7 +126,7 @@ def train_model():
         mlflow.set_tag("git_commit", git_sha)
         mlflow.set_tag("git_branch", git_branch)
         mlflow.set_tag("code_version", git_sha)
-        
+
         # 记录环境信息
         mlflow.set_tag("python_version", sys.version)
         mlflow.set_tag("platform", sys.platform)
@@ -142,7 +147,7 @@ def train_model():
         params = config["model"]["random_forest"]
         for param, value in params.items():
             mlflow.log_param(param, value)
-        
+
         # 记录训练配置
         mlflow.log_param("test_size", config["data"]["test_size"])
         mlflow.log_param("random_state", config["training"]["random_state"])
@@ -167,7 +172,7 @@ def train_model():
         # 记录指标
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("f1_score", f1)
-        
+
         # 记录训练完成状态
         mlflow.set_tag("training_status", "completed")
 
@@ -177,25 +182,23 @@ def train_model():
         model_path = "ml/registry/model.pkl"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         joblib.dump(model, model_path)
-        
+
         # 记录模型文件路径
         mlflow.log_artifact(model_path, "model")
 
         # 记录模型到 MLflow（远程）
         mlflow.sklearn.log_model(
-            model, 
-            "model",
-            registered_model_name="random_forest_classifier"
+            model, "model", registered_model_name="random_forest_classifier"
         )
 
         print("Training completed and logged to MLflow")
-        
+
         # 返回训练结果
         return {
             "accuracy": accuracy,
             "f1_score": f1,
             "model_path": model_path,
-            "run_id": mlflow.active_run().info.run_id
+            "run_id": mlflow.active_run().info.run_id,
         }
 
 
@@ -210,6 +213,6 @@ if __name__ == "__main__":
         try:
             mlflow.set_tag("training_status", "failed")
             mlflow.log_param("error", str(e))
-        except:
-            pass
+        except Exception as exc:
+            print(f"Failed to log error to MLflow: {exc}")
         sys.exit(1)
