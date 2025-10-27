@@ -1,0 +1,12 @@
+# 训练配置
+data:
+  test_size: 0.2
+  random_state: 42
+
+model:
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+
+training:
+  random_state: 42
